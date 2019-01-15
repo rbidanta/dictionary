@@ -17,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+
 /**
  * @author Rashmi
  */
@@ -38,21 +39,28 @@ public class WordSearchService {
 
     private final WordRepository wordRepository;
 
+    private final WordCacheService wordCacheService;
+
     @Autowired
-    public WordSearchService(WordRepository wordRepository, RestTemplate restTemplate) {
+    public WordSearchService(WordRepository wordRepository, RestTemplate restTemplate, WordCacheService wordCacheService) {
         this.wordRepository = wordRepository;
         this.restTemplate = restTemplate;
+        this.wordCacheService = wordCacheService;
     }
 
     /**
-     *
      * @param word
      * @return
      * @throws JsonProcessingException
      */
     public Optional<String> searchWord(String word) throws JsonProcessingException {
-        Optional<RobotStatus> optionalRobotStatus = askRobot(ROBOT_STATUS, HttpMethod.GET);
         ObjectMapper mapper = new ObjectMapper();
+        if (this.wordCacheService.getWordDictionary().containsKey(word)) {
+            return Optional.of(mapper.writeValueAsString(this.wordCacheService.getWordDictionary().get(word)));
+        }
+
+        Optional<RobotStatus> optionalRobotStatus = askRobot(ROBOT_STATUS, HttpMethod.GET);
+
         if (!optionalRobotStatus.isPresent()) return Optional.empty();
         RobotStatus robotStatus = optionalRobotStatus.get();
 
@@ -68,7 +76,6 @@ public class WordSearchService {
     }
 
     /**
-     *
      * @param word
      * @param robotPosition
      * @return
@@ -127,7 +134,6 @@ public class WordSearchService {
     }
 
     /**
-     *
      * @return
      */
     private HttpEntity getHttpEntity() {
@@ -147,11 +153,13 @@ public class WordSearchService {
         HttpEntity httpEntity = getHttpEntity();
         String url = ROBOT_API_ENDPOINT + "/" + action;
         RobotStatus robotStatus = restTemplate.exchange(url, httpMethod, httpEntity, RobotStatus.class).getBody();
+        if(null != robotStatus){
+            this.wordCacheService.getWordDictionary().put(robotStatus.getCurrentTerm(),robotStatus);
+        }
         return Optional.ofNullable(robotStatus);
     }
 
     /**
-     *
      * @param word
      * @param currentPosition
      * @return
@@ -175,7 +183,6 @@ public class WordSearchService {
     }
 
     /**
-     *
      * @param ch1
      * @param ch2
      * @return
