@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inmoment.dictionary.model.RobotArms;
 import com.inmoment.dictionary.model.RobotCamera;
 import com.inmoment.dictionary.model.RobotStatus;
-import com.inmoment.dictionary.repositories.WordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -13,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -37,23 +37,25 @@ public class WordSearchService {
 
     private final RestTemplate restTemplate;
 
-    private final WordRepository wordRepository;
+    //private final WordRepository wordRepository;
 
     private final WordCacheService wordCacheService;
 
     @Autowired
-    public WordSearchService(WordRepository wordRepository, RestTemplate restTemplate, WordCacheService wordCacheService) {
-        this.wordRepository = wordRepository;
+    public WordSearchService(RestTemplate restTemplate, WordCacheService wordCacheService) {
+        //this.wordRepository = wordRepository;
         this.restTemplate = restTemplate;
         this.wordCacheService = wordCacheService;
     }
 
     /**
+     *
      * @param word
      * @return
      * @throws JsonProcessingException
+     * @throws RestClientException
      */
-    public Optional<String> searchWord(String word) throws JsonProcessingException {
+    public Optional<String> searchWord(String word) throws JsonProcessingException , RestClientException {
         ObjectMapper mapper = new ObjectMapper();
         if (this.wordCacheService.getWordDictionary().containsKey(word)) {
             return Optional.of(mapper.writeValueAsString(this.wordCacheService.getWordDictionary().get(word)));
@@ -80,7 +82,7 @@ public class WordSearchService {
      * @param robotPosition
      * @return
      */
-    private Optional<RobotStatus> continueSearch(String word, RobotStatus robotPosition) {
+    private Optional<RobotStatus> continueSearch(String word, RobotStatus robotPosition) throws RestClientException {
 
         // If  word == robotposition.currentterm return robotPosition
         // If  word < robotposition.currentterm
@@ -149,12 +151,12 @@ public class WordSearchService {
      * @param httpMethod
      * @return
      */
-    private Optional<RobotStatus> askRobot(String action, HttpMethod httpMethod) {
+    private Optional<RobotStatus> askRobot(String action, HttpMethod httpMethod) throws RestClientException {
         HttpEntity httpEntity = getHttpEntity();
         String url = ROBOT_API_ENDPOINT + "/" + action;
         RobotStatus robotStatus = restTemplate.exchange(url, httpMethod, httpEntity, RobotStatus.class).getBody();
-        if(null != robotStatus){
-            this.wordCacheService.getWordDictionary().put(robotStatus.getCurrentTerm(),robotStatus);
+        if (null != robotStatus) {
+            this.wordCacheService.getWordDictionary().put(robotStatus.getCurrentTerm(), robotStatus);
         }
         return Optional.ofNullable(robotStatus);
     }
