@@ -15,6 +15,9 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = DictionaryApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -23,35 +26,30 @@ public class WordSearchControllerIntegrationTest {
     @LocalServerPort
     private int port;
 
-    TestRestTemplate restTemplate = new TestRestTemplate();
+    private TestRestTemplate restTemplate = new TestRestTemplate();
 
-    HttpHeaders headers = new HttpHeaders();
+    private HttpHeaders headers = new HttpHeaders();
 
     @Test
     public void getDefinition_ForWordThatExistsInDictionary() {
 
-        RobotStatus mockRobotStatus = new RobotStatus();
-        mockRobotStatus.setStatus("READY");
-        mockRobotStatus.setTimeUsed(435115);
-        mockRobotStatus.setCurrentPageIndex(0);
-        mockRobotStatus.setCurrentTerm("A-TIPTOE");
-        mockRobotStatus.setCurrentTermDefinition("On tiptoe; eagerly expecting.We all feel a-tiptoe with hope and confidence. F. Harrison.");
-        mockRobotStatus.setCurrentTermIndex(10);
-        mockRobotStatus.setTimeRemaining(169684);
-        mockRobotStatus.setHasNextPage(true);
-        mockRobotStatus.setHasNextTerm(true);
-        mockRobotStatus.setHasPreviousPage(false);
-        mockRobotStatus.setHasPreviousTerm(true);
-
+        Map<String, String> dictionaryMap = new HashMap<>();
+        dictionaryMap.put("Pink", "A vessel with a very narrow stern; -- called also pinky. Sir W.Scott. Pink stern (Naut.), a narrow stern.");
+        dictionaryMap.put("A-TIPTOE", "On tiptoe; eagerly expecting.We all feel a-tiptoe with hope and confidence. F. Harrison.");
+        dictionaryMap.put("Orange", "The tree that bears oranges; the orange tree.");
+        dictionaryMap.put("Z", "Z, the twenty-sixth and last letter of the English alphabet, isa vocal consonant. It is taken from the Latin letter Z, which camefrom the Greek alphabet, this having it from a Semitic source. Theultimate origin is probably Egyptian. Etymologically, it is mostclosely related to s, y, and j; as in glass, glaze; E. yoke, Gr.yugum; E. zealous, jealous. See Guide to Pronunciation, §§ 273, 274.");
+        dictionaryMap.put("BIFACIAL", "Having the opposite surfaces alike.");
         HttpEntity<String> entity = new HttpEntity<>(null, headers);
 
-        ResponseEntity<RobotStatus> response = restTemplate.exchange(
-                createURLWithPort("/search/A-TIPTOE"),
-                HttpMethod.GET, entity, RobotStatus.class);
-
-        Assert.assertEquals(HttpStatus.OK,response.getStatusCode());
-        Assert.assertNotNull(response.getBody());
-        Assert.assertTrue(mockRobotStatus.getCurrentTermDefinition().equalsIgnoreCase(response.getBody().getCurrentTermDefinition()));
+        for (Map.Entry<String,String> entry : dictionaryMap.entrySet()
+        ) {
+            ResponseEntity<RobotStatus> response = restTemplate.exchange(
+                    createURLWithPort("/search/"+entry.getKey()),
+                    HttpMethod.GET, entity, RobotStatus.class);
+            Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
+            Assert.assertNotNull(response.getBody());
+            Assert.assertTrue(entry.getValue().equalsIgnoreCase(response.getBody().getCurrentTermDefinition()));
+        }
     }
 
     @Test
@@ -63,7 +61,7 @@ public class WordSearchControllerIntegrationTest {
                 createURLWithPort("/search/BEAST"),
                 HttpMethod.GET, entity, String.class);
 
-        Assert.assertEquals(HttpStatus.BAD_REQUEST,response.getStatusCode());
+        Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         Assert.assertNotNull(response.getBody());
         JSONAssert.assertEquals(mockWordNotFoundJson, response.getBody(), false);
 
