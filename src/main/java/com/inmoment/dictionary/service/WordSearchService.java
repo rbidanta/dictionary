@@ -33,27 +33,24 @@ public class WordSearchService {
     private String ROBOT_API_KEY;
 
     private static final String ROBOT_STATUS = "status";
-    private static final String ROBOT_STATUS_READY = "ready";
 
     private final RestTemplate restTemplate;
-
-    //private final WordRepository wordRepository;
 
     private final WordCacheService wordCacheService;
 
     @Autowired
     public WordSearchService(RestTemplate restTemplate, WordCacheService wordCacheService) {
-        //this.wordRepository = wordRepository;
         this.restTemplate = restTemplate;
         this.wordCacheService = wordCacheService;
     }
 
     /**
-     *
-     * @param word
-     * @return
-     * @throws JsonProcessingException
-     * @throws RestClientException
+     * This function initiates the process of searching the word
+     * @param word The word to be looked up from the Robot API
+     * @return Optional<String> The JSON string of RobotStatus of the word being searched if the word exists in the
+     * dictionary otherwise a JSON string with error message
+     * @throws JsonProcessingException If JSON processing exception occurs
+     * @throws RestClientException If Rest API Client exceptions occurs
      */
     public Optional<String> searchWord(String word) throws JsonProcessingException , RestClientException {
         ObjectMapper mapper = new ObjectMapper();
@@ -78,32 +75,13 @@ public class WordSearchService {
     }
 
     /**
-     * @param word
-     * @param robotPosition
-     * @return
+     * This function does the heavy lifting of moving the robot's arms and cameras
+     * @param word Word being searched
+     * @param robotPosition Current position of robot
+     * @return Optional<RobotStatus> Optional {@link RobotStatus} of the word being searched
      */
     private Optional<RobotStatus> continueSearch(String word, RobotStatus robotPosition) throws RestClientException {
 
-        // If  word == robotposition.currentterm return robotPosition
-        // If  word < robotposition.currentterm
-        // check the first term on the page
-        // if word < first term:
-        // continue search in previous page
-        // if word > first term:
-        // while(word!=currentterm) find the next term
-        // if next term == robotposition.currentterm break
-        // return optionalempty
-        // if word > robotposition.currentterm
-        // check the last term on the page
-        // if word > last term:
-        // continue search in next page
-        // if word < last term:
-        // while(word!=currentterm) find the previous term
-        // if previous term == robotposition.currentterm break
-        // return optionalempty
-
-        //System.out.println("Page Number:"+robotPosition.getCurrentPageIndex()+" Term Index:"+robotPosition.getCurrentTermIndex());
-        //System.out.println("Search Word:"+word+" Current Word:"+robotPosition.getCurrentTerm());
         if (word.compareToIgnoreCase(robotPosition.getCurrentTerm()) == 0) {
             return Optional.of(robotPosition);
         } else if (word.compareToIgnoreCase(robotPosition.getCurrentTerm()) < 0) {
@@ -136,7 +114,7 @@ public class WordSearchService {
     }
 
     /**
-     * @return
+     * @return HttpEntity with headers set with authorization parameters
      */
     private HttpEntity getHttpEntity() {
         HttpHeaders httpHeaders = new HttpHeaders();
@@ -147,9 +125,10 @@ public class WordSearchService {
 
 
     /**
-     * @param action
-     * @param httpMethod
-     * @return
+     * This function moves the {@link RobotArms} and {@link RobotCamera}
+     * @param action This is a String that forms the URL endpoint for the API call
+     * @param httpMethod This is of type {@link HttpMethod}
+     * @return Optional<RobotStatus> Optional {@link RobotStatus} of the word being searched
      */
     private Optional<RobotStatus> askRobot(String action, HttpMethod httpMethod) throws RestClientException {
         HttpEntity httpEntity = getHttpEntity();
@@ -162,9 +141,10 @@ public class WordSearchService {
     }
 
     /**
-     * @param word
-     * @param currentPosition
-     * @return
+     * This function decides whether to start searching the word from beginning or end of the  dictionary
+     * @param word String of word being searched
+     * @param currentPosition Current position of the robot
+     * @return "first" or "last" or "stay"
      */
     private String whereToStartForm(String word, RobotStatus currentPosition) {
         char firstChar = word.toUpperCase().charAt(0);
@@ -185,9 +165,10 @@ public class WordSearchService {
     }
 
     /**
-     * @param ch1
-     * @param ch2
-     * @return
+     * This function takes two character and returns the distance between them
+     * @param ch1 first Character
+     * @param ch2 Second Character
+     * @return Distance between the two characters
      */
     private int distance(char ch1, char ch2) {
         return Math.abs((int) ch1 - (int) ch2);
