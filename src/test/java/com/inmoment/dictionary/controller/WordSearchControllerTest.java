@@ -99,4 +99,17 @@ public class WordSearchControllerTest {
         Assert.assertEquals(HttpStatus.BAD_REQUEST.value(),result.getResponse().getStatus());
     }
 
+    @Test
+    public void getDefinition_IfProvidedWordStartsWithDigit() throws Exception{
+        String mockWordNotFoundJson = "{\"status\":\"Word Not Found\"}";
+        Mockito.when(wordSearchService.searchWord(Mockito.anyString())).thenReturn(Optional.empty());
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.get(
+                "/search/1").accept(MediaType.APPLICATION_JSON);
+        MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+        JSONAssert.assertEquals(mockWordNotFoundJson, result.getResponse()
+                .getContentAsString(), false);
+        Assert.assertEquals(HttpStatus.BAD_REQUEST.value(),result.getResponse().getStatus());
+
+    }
+
 }

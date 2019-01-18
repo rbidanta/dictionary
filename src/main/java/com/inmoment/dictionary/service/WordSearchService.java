@@ -54,6 +54,11 @@ public class WordSearchService {
      */
     public Optional<String> searchWord(String word) throws JsonProcessingException , RestClientException {
         ObjectMapper mapper = new ObjectMapper();
+
+        if(startsWithDigit(word)){
+            return Optional.empty();
+        }
+
         if (this.wordCacheService.getWordDictionary().containsKey(word)) {
             return Optional.of(mapper.writeValueAsString(this.wordCacheService.getWordDictionary().get(word)));
         }
@@ -172,6 +177,16 @@ public class WordSearchService {
      */
     private int distance(char ch1, char ch2) {
         return Math.abs((int) ch1 - (int) ch2);
+    }
+
+
+    /**
+     * This function checks if the word starts with digit
+     * @param word Word to be checked for validity
+     * @return Boolean True is the word starts with a number else false
+     */
+    private boolean startsWithDigit(String word){
+        return Character.isDigit(word.charAt(0));
     }
 
 }
